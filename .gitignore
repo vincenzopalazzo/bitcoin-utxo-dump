@@ -4,3 +4,9 @@
 *.dat
 
 *.csv
+
+pkg/
+
+src/github.com/
+
+src/golang.org/
