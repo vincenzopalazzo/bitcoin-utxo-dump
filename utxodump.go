@@ -540,7 +540,7 @@ func main() {
 			// -------------
 			// Write to buffer (use bufio for faster writes)
 			fmt.Fprintln(writer, csvline)
-			compressionFlow.Write([]byte(compressionData + "\n"))
+			compressionFlow.Write([]byte(compressionData + "."))
 			compressionData = ""
 		}
 		// Increment Count
