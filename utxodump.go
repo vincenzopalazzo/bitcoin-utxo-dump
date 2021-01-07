@@ -2,7 +2,7 @@ package main
 
 // local packages
 import (
-	"bytes"
+	"compress/flate"
 	"github.com/cheggaaa/pb/v3"
 	"github.com/in3rsha/bitcoin-utxo-dump/bitcoin/btcleveldb"
 	"time"
@@ -182,11 +182,14 @@ func main() {
 		os.Exit(0)     // exit
 	}()
 
-	// Declare the compressed buffer
-	var buffer bytes.Buffer
-	compressionFlow := zlib.NewWriter(&buffer)
-	//Save on file
+	// Create file were store the compress result
 	fileCompressed, err := os.Create("chainstate-" + time.Now().Format("01-02-2006") + ".dat")
+	if err != nil {
+		panic(err)
+	}
+
+	compressionFlow, err := zlib.NewWriterLevel(fileCompressed, flate.BestCompression)
+
 	if err != nil {
 		panic(err)
 	}
@@ -548,7 +551,6 @@ func main() {
 	bar.Finish()
 	// ---------- END Compression flow -------------
 	compressionFlow.Close()
-	fileCompressed.Write(buffer.Bytes())
 	fileCompressed.Close()
 
 	// Final Progress Report
