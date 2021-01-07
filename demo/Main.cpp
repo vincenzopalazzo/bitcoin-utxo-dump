@@ -2,20 +2,21 @@
 #include <zlib.h>
 #include <vector>
 
-void decompressFileWithZLib(const std::string &filename);
+void decompressFileWithZLib(char* filename);
 
 int main(int argc, char* argv[])
 {
-    decompressFileWithZLib(std::string(argv[1]));
+    std::cout << "Load compressed file from: " << argv[1];
+    decompressFileWithZLib(argv[1]);
     return 0;
 }
 
-void decompressFileWithZLib(const std::string &filename)
+void decompressFileWithZLib(char* filename)
 {
-    gzFile inFileZ = gzopen(filename.c_str(), "rb");
+    gzFile inFileZ = gzopen(filename, "rb");
 
     if(inFileZ == NULL){
-        printf("Error: Failed to gzopen %s\n", filename.c_str());
+        printf("Error: Failed to gzopen %s\n", filename);
         exit(0);
     }
     unsigned char unzipBuffer[8192];

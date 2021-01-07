@@ -2,7 +2,6 @@ package main
 
 // local packages
 import (
-	"compress/flate"
 	"github.com/cheggaaa/pb/v3"
 	"github.com/in3rsha/bitcoin-utxo-dump/bitcoin/btcleveldb"
 	"time"
@@ -72,6 +71,7 @@ func main() {
 	testnetflag := flag.Bool("testnet", false, "Is the chainstate leveldb for testnet?") // true/false
 	verbose := flag.Bool("v", false, "Print utxos as we process them (will be about 3 times slower with this though).")
 	version := flag.Bool("version", false, "Print version.")
+	fast := flag.Bool("fast", false, "Go fast without progress bar and prints during parsing phase")
 	flag.Parse() // execute command line parsing for all declared flags
 
 	// Show Version
@@ -188,20 +188,22 @@ func main() {
 		panic(err)
 	}
 
-	compressionFlow, err := zlib.NewWriterLevel(fileCompressed, flate.BestCompression)
-
-	if err != nil {
-		panic(err)
-	}
+	compressionFlow:= zlib.NewWriter(fileCompressed)
 
 	// this is an horrible things to do
-	fmt.Println("Parser configuration, please wait (on Mainet can require a lot of time)")
-	sizeDb := 0
-	for iter.Next() {
-		sizeDb++
+	bar := pb.StartNew(0)
+	if *fast == false {
+		fmt.Println("Parser configuration, please wait (on Mainet can require a lot of time)")
+		sizeDb := 0
+		for iter.Next() {
+			sizeDb++
+		}
+		iter.Release()
+		bar = pb.StartNew(sizeDb)
+	} else {
+		bar.Finish()
 	}
-	iter.Release()
-	bar := pb.StartNew(sizeDb)
+
 
 	// Iterate over LevelDB keys
 	iter = db.NewIterator(nil, nil)
@@ -528,27 +530,34 @@ func main() {
 				//fmt.Println(csvline) // Print each line.
 				// 1157.76user 176.47system 30:44.64elapsed 72%CPU (0avgtext+0avgdata 55332maxresident)k
 				// 1110.76user 164.97system 29:17.17elapsed 72%CPU (0avgtext+0avgdata 55236maxresident)k (after using packages)
-			} /*else {
+			} else if *fast {
 				if i%100000 == 0 {
 					fmt.Printf("%d utxos processed\n", i) // Show progress at intervals.
 				}
 				// 812.18user 16.94system 12:44.04elapsed 108%CPU (0avgtext+0avgdata 55272maxresident)k
 				// 951.03user 27.91system 15:21.35elapsed 106%CPU (0avgtext+0avgdata 55896maxresident)k (after using packages)
-			}*/
+			}
 
 			// Write to File
 			// -------------
 			// Write to buffer (use bufio for faster writes)
-			fmt.Fprintln(writer, csvline)
-			compressionFlow.Write([]byte(compressionData + "."))
-			compressionData = ""
+			// I need only the witness script (or possible witness script)
+			if compressionData == "p2wsh" {
+				fmt.Fprintln(writer, csvline)
+				compressionFlow.Write([]byte(compressionData + "."))
+				compressionData = ""
+			}
 		}
 		// Increment Count
 		i++
-		bar.Increment()
+		if bar.IsStarted() {
+			bar.Increment()
+		}
 	}
 	iter.Release() // Do not defer this, want to release iterator before closing database
-	bar.Finish()
+	if bar.IsStarted() {
+		bar.Finish()
+	}
 	// ---------- END Compression flow -------------
 	compressionFlow.Close()
 	fileCompressed.Close()
