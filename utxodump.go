@@ -2,6 +2,8 @@ package main
 
 // local packages
 import (
+	"compress/gzip"
+	_ "compress/gzip"
 	"github.com/cheggaaa/pb/v3"
 	"github.com/in3rsha/bitcoin-utxo-dump/bitcoin/btcleveldb"
 	"time"
@@ -23,7 +25,7 @@ import "encoding/hex" // convert byte slice to hexadecimal
 import "strings"      // parsing flags from command line
 import "runtime"      // Check OS type for file-handler limitations
 
-import "compress/zlib"
+// import "compress/zlib" // It is a fake zlib
 
 // This for was created to make a compression file with the chain data
 // to run a lightning network node on an Android device
@@ -188,7 +190,8 @@ func main() {
 		panic(err)
 	}
 
-	compressionFlow:= zlib.NewWriter(fileCompressed)
+	// Z lib default value is 6 to make is the decempression process
+	compressionFlow := gzip.NewWriter(fileCompressed)
 
 	// this is an horrible things to do
 	bar := pb.StartNew(0)
@@ -542,11 +545,15 @@ func main() {
 			// -------------
 			// Write to buffer (use bufio for faster writes)
 			// I need only the witness script (or possible witness script)
+			fmt.Fprintln(writer, csvline)
+			compressionFlow.Write([]byte(compressionData + "."))
+			compressionData = ""
+			/*
 			if compressionData == "p2wsh" {
-				fmt.Fprintln(writer, csvline)
+			    fmt.Fprintln(writer, csvline)
 				compressionFlow.Write([]byte(compressionData + "."))
 				compressionData = ""
-			}
+			} */
 		}
 		// Increment Count
 		i++

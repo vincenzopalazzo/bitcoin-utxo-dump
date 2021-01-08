@@ -14,7 +14,6 @@ int main(int argc, char* argv[])
 void decompressFileWithZLib(char* filename)
 {
     gzFile inFileZ = gzopen(filename, "rb");
-
     if(inFileZ == NULL){
         printf("Error: Failed to gzopen %s\n", filename);
         exit(0);
