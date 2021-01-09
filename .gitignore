@@ -1,0 +1,14 @@
+
+.idea/
+
+*.dat
+
+*.csv
+
+pkg/
+
+src/github.com/
+
+src/golang.org/
+
+demo/build/
